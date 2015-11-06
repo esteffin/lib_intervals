@@ -4,57 +4,55 @@
  * @author esteffin
  */
 object bound {
-  
-  def sign(x : Int) = if (x > 0) 1 else if (x < 0) -1 else throw new RuntimeException("Sign of 0??") 
-  
+
+  def sign(x: Int) = if (x > 0) 1 else if (x < 0) -1 else throw new RuntimeException("Sign of 0??")
+
   /* ********************************************************************** */
-/* bound_def.h: numbers used for bounds */
-/* ********************************************************************** */
+  /* bound_def.h: numbers used for bounds */
+  /* ********************************************************************** */
 
-class bound_t(val num : Int, val  inf : Boolean) {
-  //val num : Int /* always allocated, even if inf=1 */
-  //val inf : Boolean;  /* 1 => +/-oo; the sign of num decides the sign of the oo 0 => >-oo, <+oo */
-  def bound_numref = num
-}
+  class bound_t(val num: Int, val inf: Boolean) {
+    //val num : Int /* always allocated, even if inf=1 */
+    //val inf : Boolean;  /* 1 => +/-oo; the sign of num decides the sign of the oo 0 => >-oo, <+oo */
+    def bound_numref = num
+  }
 
-object bound_t{
+  object bound_t {
     //def _bound_inf(a : bound_t) : bound_t = new bound_t(a.bound_numref, false)
-    def zero : bound_t = new bound_t(0, false)
-    def num(n : Int) : bound_t = new bound_t(n, false)
-}
+    def zero: bound_t = new bound_t(0, false)
+    def num(n: Int): bound_t = new bound_t(n, false)
+  }
 
-/* ---------------------------------------------------------------------- */
-def bound_infty(a:bound_t ) : Boolean =
-{ return a.inf }
+  /* ---------------------------------------------------------------------- */
+  def bound_infty(a: bound_t): Boolean =
+    { return a.inf }
 
-/* ---------------------------------------------------------------------- */
-def bound_set_infty(sgn : Int) : bound_t = {
-  if (sgn == 0) throw new RuntimeException("Sign must be different than 0")
-  return new bound_t(if (sgn>0) 1 else -1, true)
-}
+  /* ---------------------------------------------------------------------- */
+  def bound_set_infty(sgn: Int): bound_t = {
+    if (sgn == 0) throw new RuntimeException("Sign must be different than 0")
+    return new bound_t(if (sgn > 0) 1 else -1, true)
+  }
 
-
-/* ---------------------------------------------------------------------- */
-def bound_init_set_infty(a : bound_t, sgn : Int) : bound_t = {
-  return bound_set_infty(sgn);
-}
-/*
+  /* ---------------------------------------------------------------------- */
+  def bound_init_set_infty(a: bound_t, sgn: Int): bound_t = {
+    return bound_set_infty(sgn);
+  }
+  /*
 def bound_swap(a : bound_t , b : bound_t ) : bound_t
 {
   num_swap(bound_numref(a),bound_numref(b));
 }*/
 
-def bound_sgn(a : bound_t) : Int = {
-  sign(a.num); 
+  def bound_sgn(a: bound_t): Int = {
+    sign(a.num);
   }
 
-/* ====================================================================== */
-/* Assignement */
-/* ====================================================================== */
+  /* ====================================================================== */
+  /* Assignement */
+  /* ====================================================================== */
 
-
-def bound_set(b : bound_t ) :bound_t  =  new bound_t (b.num, b.inf) 
-/*
+  def bound_set(b: bound_t): bound_t = new bound_t(b.num, b.inf)
+  /*
 static inline void bound_set_array(bound_t* a, bound_t* b, size_t size)
 {
   size_t i;
@@ -62,24 +60,22 @@ static inline void bound_set_array(bound_t* a, bound_t* b, size_t size)
 }
 */
 
-def bound_set_int(i : Int) : bound_t = new bound_t(i, false) 
+  def bound_set_int(i: Int): bound_t = new bound_t(i, false)
 
-def bound_set_num(i : Int) : bound_t = new bound_t(i, false) 
+  def bound_set_num(i: Int): bound_t = new bound_t(i, false)
 
+  /* ====================================================================== */
+  /* Constructors and Destructors */
+  /* ====================================================================== */
 
+  def bound_init: bound_t = bound_t.zero
 
-/* ====================================================================== */
-/* Constructors and Destructors */
-/* ====================================================================== */
-
-def bound_init : bound_t = bound_t.zero
-
-/*static inline void bound_init_set_int(bound_t a, long int i)
+  /*static inline void bound_init_set_int(bound_t a, long int i)
 { num_init_set_int(bound_numref(a),i); _bound_inf(a); }
 static inline void bound_clear(bound_t a)
 { num_clear(bound_numref(a)); }*/
 
-/*
+  /*
 static inline void bound_init_array(bound_t* a, size_t size)
 {
   size_t i;
@@ -103,12 +99,11 @@ static inline void bound_clear_array(bound_t* a, size_t size)
 }
 */
 
+  /* ====================================================================== */
+  /* Arithmetic Operations */
+  /* ====================================================================== */
 
-/* ====================================================================== */
-/* Arithmetic Operations */
-/* ====================================================================== */
-
-/* +oo + -oo  \
+  /* +oo + -oo  \
    -oo + +oo  | undefined
    +oo - +oo  |
    -oo - -oo  /
@@ -127,19 +122,19 @@ static inline void bound_clear_array(bound_t* a, size_t size)
 
 */
 
-def bound_neg(b : bound_t) : bound_t = {
-  if (bound_infty(b)) bound_set_infty(-bound_sgn(b))
-  else  bound_t.num(-b.num) 
-}
+  def bound_neg(b: bound_t): bound_t = {
+    if (bound_infty(b)) bound_set_infty(-bound_sgn(b))
+    else bound_t.num(-b.num)
+  }
 
-def bound_abs(b : bound_t) : bound_t = { new bound_t(scala.math.abs(b.num), b.inf) }
+  def bound_abs(b: bound_t): bound_t = { new bound_t(scala.math.abs(b.num), b.inf) }
 
-def bound_add(b : bound_t, c : bound_t) : bound_t = {
-  if (bound_infty(b)) bound_set_infty(bound_sgn(b))
-  else if (bound_infty(c)) bound_set_infty(bound_sgn(c))
-  else new bound_t(b.num + c.num, false)
-}
-/*static inline void bound_add_uint(bound_t a, bound_t b, unsigned long int c)
+  def bound_add(b: bound_t, c: bound_t): bound_t = {
+    if (bound_infty(b)) bound_set_infty(bound_sgn(b))
+    else if (bound_infty(c)) bound_set_infty(bound_sgn(c))
+    else new bound_t(b.num + c.num, false)
+  }
+  /*static inline void bound_add_uint(bound_t a, bound_t b, unsigned long int c)
 {
   if (bound_infty(b)) bound_set_infty(a,bound_sgn(b));
   else { num_add_uint(bound_numref(a),bound_numref(b),c); _bound_inf(a); }
@@ -149,12 +144,12 @@ static inline void bound_add_num(bound_t a, bound_t b, num_t c)
   if (bound_infty(b)) bound_set_infty(a,bound_sgn(b));
   else { num_add(bound_numref(a),bound_numref(b),c); _bound_inf(a); }
 }*/
-def bound_sub(b : bound_t, c : bound_t) : bound_t = {
-  if (bound_infty(b)) bound_set_infty(bound_sgn(b))
-  else if (bound_infty(c)) bound_set_infty(-bound_sgn(c))
-  else new bound_t(b.num - c.num, false)
-}
-/*
+  def bound_sub(b: bound_t, c: bound_t): bound_t = {
+    if (bound_infty(b)) bound_set_infty(bound_sgn(b))
+    else if (bound_infty(c)) bound_set_infty(-bound_sgn(c))
+    else new bound_t(b.num - c.num, false)
+  }
+  /*
 static inline void bound_sub_uint(bound_t a, bound_t b, unsigned long int c)
 {
   if (bound_infty(b)) bound_set_infty(a,bound_sgn(b));
@@ -166,12 +161,12 @@ static inline void bound_sub_num(bound_t a, bound_t b, num_t c)
   else { num_sub(bound_numref(a),bound_numref(b),c); _bound_inf(a); }
 }*/
 
-def bound_mul(b : bound_t, c : bound_t) : bound_t = {
-  if (bound_sgn(b) == 0 || bound_sgn(c) == 0) bound_set_int(0)
-  else if (bound_infty(b) || bound_infty(c)) bound_set_infty(bound_sgn(b)*bound_sgn(c))
-  else new bound_t(b.num * c.num, false)
-}
-/*
+  def bound_mul(b: bound_t, c: bound_t): bound_t = {
+    if (bound_sgn(b) == 0 || bound_sgn(c) == 0) bound_set_int(0)
+    else if (bound_infty(b) || bound_infty(c)) bound_set_infty(bound_sgn(b) * bound_sgn(c))
+    else new bound_t(b.num * c.num, false)
+  }
+  /*
 static inline void bound_mul_num(bound_t a, bound_t b, num_t c)
 {
   if (!bound_sgn(b) || !num_sgn(c)) bound_set_int(a,0);
@@ -183,13 +178,13 @@ static inline void bound_mul_2(bound_t a, bound_t b)
   if (bound_infty(b)) bound_set_infty(a,bound_sgn(b));
   else { num_mul_2(bound_numref(a),bound_numref(b)); _bound_inf(a); }
 }*/
-def bound_div(b : bound_t , c : bound_t) : bound_t = {
-  if (bound_sgn(b) == 0 || bound_infty(c)) bound_set_int(0)
-  else if (bound_sgn(c) == 0) bound_set_infty(bound_sgn(b))
-  else if (bound_infty(b))  bound_set_infty(bound_sgn(b)*bound_sgn(c))
-  else new bound_t(b.num / c.num, false)
-}
-/*
+  def bound_div(b: bound_t, c: bound_t): bound_t = {
+    if (bound_sgn(b) == 0 || bound_infty(c)) bound_set_int(0)
+    else if (bound_sgn(c) == 0) bound_set_infty(bound_sgn(b))
+    else if (bound_infty(b)) bound_set_infty(bound_sgn(b) * bound_sgn(c))
+    else new bound_t(b.num / c.num, false)
+  }
+  /*
 static inline void bound_div_num(bound_t a, bound_t b, num_t c)
 {
   if (!bound_sgn(b)) bound_set_int(a,0);
@@ -204,18 +199,18 @@ static inline void bound_div_2(bound_t a, bound_t b)
 }
 */
 
-def bound_min(b : bound_t, c : bound_t) : bound_t = {
-  if (bound_infty(b)) if (bound_sgn(b)>0) bound_set(c) else bound_set(b)
-  else if (bound_infty(c)) if (bound_sgn(c)>0) bound_set(b) else bound_set(c)
-  else new bound_t(math.min(b.num, c.num), false)
-}
-def bound_max(b : bound_t, c : bound_t) : bound_t = {
-  if (bound_infty(b)) if (bound_sgn(b)>0) bound_set(b) else bound_set(c)
-  else if (bound_infty(c)) if (bound_sgn(c)>0) bound_set(c) else bound_set(b)
-  else new bound_t(math.max(b.num, c.num), false)
-}
+  def bound_min(b: bound_t, c: bound_t): bound_t = {
+    if (bound_infty(b)) if (bound_sgn(b) > 0) bound_set(c) else bound_set(b)
+    else if (bound_infty(c)) if (bound_sgn(c) > 0) bound_set(b) else bound_set(c)
+    else new bound_t(math.min(b.num, c.num), false)
+  }
+  def bound_max(b: bound_t, c: bound_t): bound_t = {
+    if (bound_infty(b)) if (bound_sgn(b) > 0) bound_set(b) else bound_set(c)
+    else if (bound_infty(c)) if (bound_sgn(c) > 0) bound_set(c) else bound_set(b)
+    else new bound_t(math.max(b.num, c.num), false)
+  }
 
-/*
+  /*
 static inline void bound_floor(bound_t a, bound_t b)
 {
   if (bound_infty(b)) bound_set_infty(a,bound_sgn(b));
@@ -269,7 +264,7 @@ static inline void bound_root(bound_t up, bound_t down, bound_t b, unsigned long
     num_root(bound_numref(up), bound_numref(down), bound_numref(b), n);
     _bound_inf(up);
     _bound_inf(down);
-  }  
+  }
 }
 static inline void bound_to_float(bound_t a, bound_t b)
 {
@@ -340,20 +335,21 @@ static inline void bound_mul_2exp(bound_t a, bound_t b, int c)
 }
 */
 
-/* ====================================================================== */
-/* Arithmetic Tests */
-/* ====================================================================== */
+  /* ====================================================================== */
+  /* Arithmetic Tests */
+  /* ====================================================================== */
 
-def bound_cmp(a : bound_t , b : bound_t ) : Int = {
-  if (bound_infty(a)){
-    if (bound_infty(b)) (bound_sgn(a)-bound_sgn(b))/2
-    else bound_sgn(a)
-  } else {
-    if (bound_infty(b)) -bound_sgn(b)
-    else a.num.compare(b.num)
+  def bound_cmp(a: bound_t, b: bound_t): Int = {
+    if (bound_infty(a)) {
+      if (bound_infty(b)) (bound_sgn(a) - bound_sgn(b)) / 2
+      else bound_sgn(a)
+    }
+    else {
+      if (bound_infty(b)) -bound_sgn(b)
+      else a.num.compare(b.num)
+    }
   }
-}
-/*
+  /*
 static inline int bound_cmp_int(bound_t a, long int b)
 {
   if (bound_infty(a)) return bound_sgn(a);
@@ -364,16 +360,17 @@ static inline int bound_cmp_num(bound_t a, num_t b)
   if (bound_infty(a)) return bound_sgn(a);
   else return num_cmp(bound_numref(a),b);
 }*/
-def bound_equal(a : bound_t , b : bound_t ) : Boolean = {
-  if (bound_infty(a)){
-    return bound_infty(b) && bound_sgn(a)==bound_sgn(b)
-  } else {
-    if (bound_infty(b)) return false
-    else return a.num == b.num
+  def bound_equal(a: bound_t, b: bound_t): Boolean = {
+    if (bound_infty(a)) {
+      return bound_infty(b) && bound_sgn(a) == bound_sgn(b)
+    }
+    else {
+      if (bound_infty(b)) return false
+      else return a.num == b.num
+    }
   }
-}
 
-/*
+  /*
 
 static inline int bound_hash(bound_t a)
 { if (bound_infty(a))
@@ -385,31 +382,31 @@ static inline int bound_hash(bound_t a)
   }
 }*/
 
-/* ====================================================================== */
-/* Printing */
-/* ====================================================================== */
-/*
+  /* ====================================================================== */
+  /* Printing */
+  /* ====================================================================== */
+  /*
 static inline void bound_fprint(FILE* stream, bound_t a)
 {
   if (bound_infty(a)) fprintf(stream,"%coo",bound_sgn(a)>0 ? '+' : '-');
   else num_fprint(stream,bound_numref(a));
 }*/
-def bound_print( a : bound_t) : String = {
-    if (bound_infty(a)) "%coo" format (if (bound_sgn(a)>0)  '+' else '-')
-    else "%d" format (a.num)
-}
-/*
-static inline int bound_snprint(char* s, size_t size, bound_t a)
-{
-  if (bound_infty(a)) return snprintf(s,size,"%coo",bound_sgn(a)>0 ? '+' : '-');
-  else return num_snprint(s,size,bound_numref(a));
-}*/
+  def bound_print(a: bound_t): Unit = {
+    if (bound_infty(a)) print("%coo" format (if (bound_sgn(a) > 0) '+' else '-'))
+    else print("%d" format (a.num))
+  }
 
-/* ====================================================================== */
-/* Conversions */
-/* ====================================================================== */
+  def bound_sprint(a: bound_t): String =
+    {
+      if (bound_infty(a)) "%coo".format(if (bound_sgn(a) > 0) '+' else '-')
+      else "%d" format (a.num)
+    }
 
-/*
+  /* ====================================================================== */
+  /* Conversions */
+  /* ====================================================================== */
+
+  /*
 /* Convert an ap_scalar_t into a bound_t */
 static inline
 bool bound_set_ap_scalar(bound_t a, ap_scalar_t* b)
@@ -533,6 +530,5 @@ static inline bool bound_integer(bound_t a)
 
 #endif
 * */
-
 
 }

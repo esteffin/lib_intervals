@@ -662,7 +662,7 @@ bool ITVFUN(itv_sqrt)(itv_internal_t* intern, itv_t a, itv_t b)
         new itv_t(sup = bound_max(b.inf, b.sup), inf = bound_set_int(0))
       }
     }
-
+  /*
   def itv_mod(b: itv_t, c: itv_t, is_int: Boolean): itv_t =
     {
       /* b-|c|*trunc(b/|c|) */
@@ -690,7 +690,7 @@ bool ITVFUN(itv_sqrt)(itv_internal_t* intern, itv_t a, itv_t b)
         val a = itv_sub(b, intern_eval_itv2)
         itv_meet(a, new itv_t(inf = intern_eval_itv_inf, sup = intern_eval_itv_sup))._2
       }
-    }
+    }*/
 
   /* ====================================================================== */
   /* Multiplication */
@@ -803,130 +803,106 @@ bool ITVFUN(itv_sqrt)(itv_internal_t* intern, itv_t a, itv_t b)
   /* ====================================================================== */
 
   /* Assume that both intervals are positive */
-  /*static
-void itv_divpp(itv_internal_t* intern,
-	       itv_t a,
-	       itv_t b,
-	       itv_t c)
-{
-  assert(bound_sgn(b.inf)<=0 && bound_sgn(c.inf)<0);
-  bound_neg(intern.mul_bound,c.inf);
-  bound_div(a.inf,b.inf,c.sup);
-  bound_div(a.sup,b.sup,intern.mul_bound);
-}
-/* Assume that both intervals are negative */
-static
-void itv_divnn(itv_internal_t* intern,
-	       itv_t a,
-	       itv_t b,
-	       itv_t c)
-{
-  assert(bound_sgn(b.sup)<=0 && bound_sgn(c.sup)<0);
-  bound_neg(intern.mul_bound,b.inf);
-  bound_div(a.inf,b.sup,c.inf);
-  bound_div(a.sup,intern.mul_bound,c.sup);
-}
-/* Assume that b is positive and c negative */
-static
-void itv_divpn(itv_internal_t* intern,
-	       itv_t a,
-	       itv_t b,
-	       itv_t c)
-{
-  assert(bound_sgn(b.inf)<=0 && bound_sgn(c.sup)<0);
-  bound_neg(intern.mul_bound,b.sup);
-  bound_div(intern.mul_bound,intern.mul_bound,c.sup);
-  bound_div(a.sup,b.inf,c.inf);
-  bound_set(a.inf,intern.mul_bound);
-}
-/* Assume that b is negative and c positive */
-static
-void itv_divnp(itv_internal_t* intern,
-	       itv_t a,
-	       itv_t b,
-	       itv_t c)
-{
-  assert(bound_sgn(b.sup)<=0 && bound_sgn(c.inf)<0);
-  bound_neg(intern.mul_bound, b.inf);
-  bound_div(a.inf,intern.mul_bound,c.inf);
-  bound_div(a.sup,b.sup,c.sup);
-}
+  def itv_divpp(b: itv_t, c: itv_t): itv_t = {
+    assert(bound_sgn(b.inf) <= 0 && bound_sgn(c.inf) < 0)
+    val intern_mul_bound = bound_neg(c.inf)
+    new itv_t(inf = bound_div(b.inf, c.sup), sup = bound_div(b.sup, intern_mul_bound))
+  }
+  /* Assume that both intervals are negative */
+  def itv_divnn(b: itv_t, c: itv_t): itv_t = {
+    assert(bound_sgn(b.sup) <= 0 && bound_sgn(c.sup) < 0);
+    val intern_mul_bound = bound_neg(b.inf)
+    new itv_t(inf = bound_div(b.sup, c.inf), sup = bound_div(intern_mul_bound, c.sup))
+  }
+  /* Assume that b is positive and c negative */
+  def itv_divpn(b: itv_t, c: itv_t): itv_t = {
+    assert(bound_sgn(b.inf) <= 0 && bound_sgn(c.sup) < 0)
+    var intern_mul_bound = bound_neg(b.sup)
+    intern_mul_bound = bound_div(intern_mul_bound, c.sup)
+    val a_sup = bound_div(b.inf, c.inf)
+    val a_inf = bound_set(intern_mul_bound)
+    new itv_t(sup = a_sup, inf = a_inf)
+  }
+  /* Assume that b is negative and c positive */
+  def itv_divnp(b: itv_t, c: itv_t): itv_t = {
+    assert(bound_sgn(b.sup) <= 0 && bound_sgn(c.inf) < 0)
+    val intern_mul_bound = bound_neg(b.inf)
+    val a_inf = bound_div(intern_mul_bound, c.inf)
+    val a_sup = bound_div(b.sup, c.sup)
+    new itv_t(inf = a_inf, sup = a_sup)
+  }
 
-/* Assume that interval c is positive */
-static
-void itv_divp(itv_internal_t* intern,
-	       itv_t a,
-	       itv_t b,
-	       itv_t c)
-{
-  assert(bound_sgn(c.inf)<0);
+  /* Assume that interval c is positive */
+  def itv_divp(b: itv_t, c: itv_t): itv_t = {
+    assert(bound_sgn(c.inf) < 0)
 
-  if (bound_sgn(b.inf)<=0){
-    /* b is positive */
-    itv_divpp(intern,a,b,c);
-  }
-  else if (bound_sgn(b.sup)<=0){
-    /* b is negative */
-    itv_divnp(intern,a,b,c);
-  }
-  else {
-    /* 0 is in the middle of b: one divides b by c.inf */
-    bound_neg(intern.mul_bound,c.inf);
-    bound_div(a.inf,b.inf,intern.mul_bound);
-    bound_div(a.sup,b.sup,intern.mul_bound);
-  }
-}
-/* Assume that interval c is negative */
-static
-void itv_divn(itv_internal_t* intern,
-	      itv_t a,
-	      itv_t b,
-	      itv_t c)
-{
-  assert(bound_sgn(c.sup)<0);
-
-  if (bound_sgn(b.inf)<=0){
-    /* b is positive */
-    itv_divpn(intern,a,b,c);
-  }
-  else if (bound_sgn(b.sup)<=0){
-    /* b is negative */
-    itv_divnn(intern,a,b,c);
-  }
-  else {
-    /* 0 is in the middle of b: one cross-divide b by c.sup */
-    if (a!=b) {
-      bound_div(a.inf,b.sup,c.sup);
-      bound_div(a.sup,b.inf,c.sup);
+    if (bound_sgn(b.inf) <= 0) {
+      /* b is positive */
+      itv_divpp(b, c)
+    }
+    else if (bound_sgn(b.sup) <= 0) {
+      /* b is negative */
+      itv_divnp(b, c)
     }
     else {
-      bound_div(intern.mul_bound,b.sup,c.sup);
-      bound_div(a.sup,b.inf,c.sup);
-      bound_set(a.inf,intern.mul_bound);
+      /* 0 is in the middle of b: one divides b by c.inf */
+      val intern_mul_bound = bound_neg(c.inf)
+      val a_inf = bound_div(b.inf, intern_mul_bound)
+      val a_sup = bound_div(b.sup, intern_mul_bound)
+      new itv_t(inf = a_inf, sup = a_sup)
     }
   }
-}
+  /* Assume that interval c is negative */
+  def itv_divn(b: itv_t, c: itv_t): itv_t = {
+    assert(bound_sgn(c.sup) < 0);
 
-void ITVFUN(itv_div)(itv_internal_t* intern, itv_t a, itv_t b, itv_t c)
-{
-  if (bound_sgn(c.inf)<0){
-    /* c is positive */
-    itv_divp(intern,a,b,c);
-  }
-  else if (bound_sgn(c.sup)<0){
-    /* c is negative */
-    itv_divn(intern,a,b,c);
-  }
-  else if (bound_sgn(b.inf)==0 && bound_sgn(b.sup)==0){
-    /* b is [0,0] */
-    itv_set(a,b);
-  }
-  else {
-    itv_set_top(a);
-  }
-}
+    if (bound_sgn(b.inf) <= 0) {
+      /* b is positive */
+      itv_divpn(b, c);
+    }
+    else if (bound_sgn(b.sup) <= 0) {
+      /* b is negative */
+      itv_divnn(b, c);
+    }
+    else {
+      /* 0 is in the middle of b: one cross-divide b by c.sup */
 
+      val a_inf = bound_div(b.sup, c.sup)
+      val a_sup = bound_div(b.inf, c.sup)
+      new itv_t(inf = a_inf, sup = a_sup)
 
+      /*/* 0 is in the middle of b: one cross-divide b by c.sup */
+      if (a != b) {
+        bound_div(a.inf, b.sup, c.sup);
+        bound_div(a.sup, b.inf, c.sup);
+      }
+      else {
+        bound_div(intern.mul_bound, b.sup, c.sup);
+        bound_div(a.sup, b.inf, c.sup);
+        bound_set(a.inf, intern.mul_bound);
+      }*/
+    }
+  }
+
+  def itv_div(b: itv_t, c: itv_t): itv_t = {
+    if (bound_sgn(c.inf) < 0) {
+      /* c is positive */
+      itv_divp(b, c)
+    }
+    else if (bound_sgn(c.sup) < 0) {
+      /* c is negative */
+      itv_divn(b, c)
+    }
+    else if (bound_sgn(b.inf) == 0 && bound_sgn(b.sup) == 0) {
+      /* b is [0,0] */
+      itv_set(b)
+    }
+    else {
+      itv_set_top
+    }
+  }
+
+  /*
 /* ********************************************************************** */
 /* Power */
 /* ********************************************************************** */
@@ -1014,57 +990,44 @@ void ITVFUN(itv_inv_pow)(itv_internal_t* intern, itv_t a, itv_t orga, itv_t b, i
       bound_set(a.inf, a.sup);
     }
   }
-}
+}*/
 
-/* ********************************************************************** */
-/* Printing */
-/* ********************************************************************** */
+  /* ********************************************************************** */
+  /* Printing */
+  /* ********************************************************************** */
 
-void ITVFUN(itv_fprint)(FILE* stream, itv_t a)
-{
-  num_t num;
+  def itv_print(a: itv_t): Unit =
+    {
 
-  fprintf(stream,"[");
-  if (bound_infty(a.inf))
-    fprintf(stream,"-oo");
-  else {
-    num_init(num);
-    num_neg(num,bound_numref(a.inf));
-    num_fprint(stream,num);
-    num_clear(num);
+      print("[")
+      if (bound_infty(a.inf))
+        print("-oo")
+      else {
+        print(-a.inf.bound_numref)
+      }
+      print(",")
+      bound_print(a.sup)
+      print("]");
+    }
+
+  def itv_sprint(a: itv_t): String = {
+    var res = ""
+    res = res + "["
+    if (bound_infty(a.inf))
+      res += "-oo"
+    else {
+      res += -a.inf.bound_numref
+    }
+    res += ","
+    res += bound_sprint(a.sup);
+    res += "]"
+    res
   }
-  fprintf(stream,",");
-  bound_fprint(stream,a.sup);
-  fprintf(stream,"]");
-}
-void ITVFUN(itv_print)(itv_t a)
-{
-  ITVFUN(itv_fprint)(stdout,a);
-}
-int ITVFUN(itv_snprint)(char* s, size_t size, itv_t a)
-{
-  num_t num;
-  int count = 0;
 
-  count += snprintf(s+count,size-count,"[");
-  if (bound_infty(a.inf))
-    count += snprintf(s+count,size-count,"-oo");
-  else {
-    num_init(num);
-    num_neg(num,bound_numref(a.inf));
-    count += num_snprint(s+count,size-count,num);
-    num_clear(num);
-  }
-  count += snprintf(s+count,size-count,",");
-  bound_snprint(s+count,size-count,a.sup);
-  count += snprintf(s+count,size-count,"]");
-  return count;
-}
-
-/* ********************************************************************** */
-/* Conversions */
-/* ********************************************************************** */
-
+  /* ********************************************************************** */
+  /* Conversions */
+  /* ********************************************************************** */
+  /*
 bool ITVFUN(itv_set_ap_scalar)(itv_internal_t* intern,
 			   itv_t a, ap_scalar_t* b)
 {
