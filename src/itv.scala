@@ -13,9 +13,20 @@ object itv {
   /* Be cautious: interval [a,b] is represented by [-a,b].  This is because
    bound quantities are always rounded toward +infty */
 
-  class itv_t(val inf: bound_t, val sup: bound_t) {
+  class itv_t private[itv] (val inf: bound_t, val sup: bound_t) {
     /* negation of the inf bound */
     /* sup bound */
+
+    def pretty: String = itv_sprint(this)
+    override def toString() = this.pretty
+  }
+
+  object itv_t {
+    def top = itv_set_top
+    def bottom = itv_set_bottom
+    def open_right(inf: Int) = new itv_t(inf = bound_t.num(-inf), sup = bound_set_infty(1))
+    def open_left(sup: Int) = new itv_t(inf = bound_set_infty(1), sup = bound_t.num(sup))
+    def interval(inf: Int, sup: Int) = new itv_t(inf = bound_t.num(-inf), sup = bound_t.num(sup))
   }
 
   /* ********************************************************************** */
@@ -319,9 +330,6 @@ def itv_ceil(b : itv_t) : itv_t =
 def itv_floor(b : itv_t) : itv_t =
 { new itv_t(sup = bound_floor(b.sup), inf = bound_ceil(b.inf)) }
 
-static inline void itv_trunc(itv_t a, itv_t b)
-{ bound_trunc(a.sup,b.sup); bound_trunc(a.inf,b.inf); }
-
 static inline void itv_to_int(itv_t a, itv_t b)
 { bound_ceil(a.sup,b.sup); bound_ceil(a.inf,b.inf); }
 
@@ -334,6 +342,9 @@ static inline void itv_to_double(itv_t a, itv_t b)
 static inline void itv_mul_2exp(itv_t a, itv_t b, int c)
 { bound_mul_2exp(a.sup,b.sup,c); bound_mul_2exp(a.inf,b.inf,c); }
 */
+
+  def itv_trunc(b: itv_t): itv_t =
+    { new itv_t(sup = bound_trunc(b.sup), inf = bound_trunc(b.inf)) }
 
   def itv_is_pos(a: itv_t): Boolean =
     { bound_sgn(a.inf) <= 0 }
@@ -662,10 +673,16 @@ bool ITVFUN(itv_sqrt)(itv_internal_t* intern, itv_t a, itv_t b)
         new itv_t(sup = bound_max(b.inf, b.sup), inf = bound_set_int(0))
       }
     }
-  /*
-  def itv_mod(b: itv_t, c: itv_t, is_int: Boolean): itv_t =
+
+  /* x mod y = x - y*trunc(x/y) */
+  def itv_mod(b: itv_t, c: itv_t, is_int: Boolean = true): itv_t =
     {
       /* b-|c|*trunc(b/|c|) */
+      val fst = itv_sub(b, itv_abs(c)) // b-|c|
+      val arg = itv_div(b, itv_abs(c)) //b/|c|
+      itv_mul(fst, itv_trunc(arg))
+
+      /*
       val intern_eval_itv = itv_abs(c)
       var intern_eval_itv_sup = intern_eval_itv.sup
       var intern_eval_itv_inf = intern_eval_itv.inf
@@ -689,8 +706,8 @@ bool ITVFUN(itv_sqrt)(itv_internal_t* intern, itv_t a, itv_t b)
           intern_eval_itv_inf = bound_set_int(0);
         val a = itv_sub(b, intern_eval_itv2)
         itv_meet(a, new itv_t(inf = intern_eval_itv_inf, sup = intern_eval_itv_sup))._2
-      }
-    }*/
+      }*/
+    }
 
   /* ====================================================================== */
   /* Multiplication */
@@ -769,22 +786,27 @@ bool ITVFUN(itv_sqrt)(itv_internal_t* intern, itv_t a, itv_t b)
   def itv_mul(b: itv_t, c: itv_t): itv_t =
     {
       if (bound_sgn(c.inf) <= 0) {
+        //println("mulp b c")
         /* c is positive, */
         itv_mulp(b, c)
       }
       else if (bound_sgn(c.sup) <= 0) {
+        //println("muln b c")
         /* c is negative */
         itv_muln(b, c)
       }
       else if (bound_sgn(b.inf) <= 0) {
+        //println("mulp c b")
         /* b is positive, */
         itv_mulp(c, b)
       }
       else if (bound_sgn(c.sup) <= 0) {
+        //println("muln c b")
         /* b is negative */
         itv_muln(c, b)
       }
       else {
+        //println("divide c")
         /* divide c */
         var intern_mul_itv_inf = bound_set(c.inf)
         var intern_mul_itv_sup = bound_set_int(0)

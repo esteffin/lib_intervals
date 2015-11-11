@@ -5,7 +5,7 @@
  */
 object bound {
 
-  def sign(x: Int) = if (x > 0) 1 else if (x < 0) -1 else throw new RuntimeException("Sign of 0??")
+  def sign(x: Int) = if (x > 0) 1 else if (x < 0) -1 else 0
 
   /* ********************************************************************** */
   /* bound_def.h: numbers used for bounds */
@@ -149,12 +149,12 @@ static inline void bound_add_num(bound_t a, bound_t b, num_t c)
     else if (bound_infty(c)) bound_set_infty(-bound_sgn(c))
     else new bound_t(b.num - c.num, false)
   }
+
+  def bound_sub_uint(b: bound_t, c: Int): bound_t = {
+    if (bound_infty(b)) new bound_t(inf = b.inf, num = b.num)
+    else { new bound_t(inf = false, num = b.num - c) }
+  }
   /*
-static inline void bound_sub_uint(bound_t a, bound_t b, unsigned long int c)
-{
-  if (bound_infty(b)) bound_set_infty(a,bound_sgn(b));
-  else { num_sub_uint(bound_numref(a),bound_numref(b),c); _bound_inf(a); }
-}
 static inline void bound_sub_num(bound_t a, bound_t b, num_t c)
 {
   if (bound_infty(b)) bound_set_infty(a,bound_sgn(b));
@@ -210,6 +210,12 @@ static inline void bound_div_2(bound_t a, bound_t b)
     else new bound_t(math.max(b.num, c.num), false)
   }
 
+  def bound_trunc(b: bound_t): bound_t = {
+    if (bound_infty(b)) bound_set_infty(bound_sgn(b))
+    else { new bound_t(num = b.num, inf = false) }
+    //{ num_trunc(bound_numref(a), bound_numref(b)); _bound_inf(a); }
+  }
+
   /*
 static inline void bound_floor(bound_t a, bound_t b)
 {
@@ -220,11 +226,6 @@ static inline void bound_ceil(bound_t a, bound_t b)
 {
   if (bound_infty(b)) bound_set_infty(a,bound_sgn(b));
   else { num_ceil(bound_numref(a),bound_numref(b)); _bound_inf(a); }
-}
-static inline void bound_trunc(bound_t a, bound_t b)
-{
-  if (bound_infty(b)) bound_set_infty(a,bound_sgn(b));
-  else { num_trunc(bound_numref(a),bound_numref(b)); _bound_inf(a); }
 }
 static inline void bound_sqrt(bound_t up, bound_t down, bound_t b)
 {
