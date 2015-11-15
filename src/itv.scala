@@ -16,7 +16,7 @@ object itv {
   class itv_t private[itv] (val inf: bound_t, val sup: bound_t) {
     /* negation of the inf bound */
     /* sup bound */
-    
+
     override def clone() = new itv_t(inf = this.inf.clone(), sup = this.sup.clone())
 
     def pretty: String = itv_sprint(this)
@@ -683,17 +683,16 @@ bool ITVFUN(itv_sqrt)(itv_internal_t* intern, itv_t a, itv_t b)
       /*val fst = itv_sub(b, itv_abs(c)) // b-|c|
       val arg = itv_div(b, itv_abs(c)) //b/|c|
       itv_mul(fst, itv_trunc(arg))*/
-    
+
       /* due errori:
        * 1. intern vale 0 - 2 anzichè 0 - 3 (anche se 0 - 2 è più giusto)
        * 2. a vale 1 - 4 e non -1 - 4       (come invece dovrebbe fare... E fa se si usa b-|c|*trunc(b/|c|) secca)
-       * 
+       *
        * idea:
        * usare b-|c|*trunc(b/|c|)
        * fixare intern...
        */
 
-      
       val intern_eval_itv = itv_abs(c)
       var intern_eval_itv_sup = intern_eval_itv.sup
       var intern_eval_itv_inf = intern_eval_itv.inf
@@ -1034,8 +1033,8 @@ void ITVFUN(itv_inv_pow)(itv_internal_t* intern, itv_t a, itv_t orga, itv_t b, i
 
   def itv_print(a: itv_t): Unit =
     {
-
-      print("[")
+      print(itv_sprint(a))
+      /*print("[")
       if (bound_infty(a.inf))
         print("-oo")
       else {
@@ -1043,21 +1042,24 @@ void ITVFUN(itv_inv_pow)(itv_internal_t* intern, itv_t a, itv_t orga, itv_t b, i
       }
       print(",")
       bound_print(a.sup)
-      print("]");
+      print("]");*/
     }
 
   def itv_sprint(a: itv_t): String = {
-    var res = ""
-    res = res + "["
-    if (bound_infty(a.inf))
-      res += "-oo"
+    if (itv_is_bottom(a)) "BOTTOM"
     else {
-      res += -a.inf.bound_numref
+      var res = ""
+      res = res + "["
+      if (bound_infty(a.inf))
+        res += "-oo"
+      else {
+        res += -a.inf.bound_numref
+      }
+      res += ","
+      res += bound_sprint(a.sup);
+      res += "]"
+      res
     }
-    res += ","
-    res += bound_sprint(a.sup);
-    res += "]"
-    res
   }
 
   /* ********************************************************************** */

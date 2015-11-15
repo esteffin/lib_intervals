@@ -52,6 +52,12 @@ object Main {
       //itv_mod(intern,a,b,c);
       printf(s"$b mod $c ="); itv_print(itv_mod(b, c)); printf("\n");
 
+      printf(s"$b JOIN $c ="); itv_print(itv_join(b, c)); printf("\n");
+
+      printf(s"$b MEET $c ="); itv_print(itv_meet(b, c)._2); printf("\n");
+
+      printf(s"$b WIDENING $c ="); itv_print(itv_widening(b, c)); printf("\n");
+
       //itv_set(b,bb); itv_set(c,cc);
       //itv_add_bound(a,b,bound);
       //printf("itv_add_bound(b,bound)="); itv_print(a); printf("\n");
@@ -117,6 +123,10 @@ object Main {
 
       b = itv_t.open_right(inf = 5) //bound_set_int(b->inf,3); bound_set_int(b->sup,5);
       c = itv_t.open_left(sup = -11) //bound_set_int(c->inf,7); bound_set_int(c->sup,11);
+      arith(b, c);
+
+      b = itv_t.open_right(inf = 5) //bound_set_int(b->inf,3); bound_set_int(b->sup,5);
+      c = itv_t.bottom //bound_set_int(c->inf,7); bound_set_int(c->sup,11);
       arith(b, c);
 
     }
