@@ -16,6 +16,8 @@ object itv {
   class itv_t private[itv] (val inf: bound_t, val sup: bound_t) {
     /* negation of the inf bound */
     /* sup bound */
+    
+    override def clone() = new itv_t(inf = this.inf.clone(), sup = this.sup.clone())
 
     def pretty: String = itv_sprint(this)
     override def toString() = this.pretty
@@ -678,11 +680,20 @@ bool ITVFUN(itv_sqrt)(itv_internal_t* intern, itv_t a, itv_t b)
   def itv_mod(b: itv_t, c: itv_t, is_int: Boolean = true): itv_t =
     {
       /* b-|c|*trunc(b/|c|) */
-      val fst = itv_sub(b, itv_abs(c)) // b-|c|
+      /*val fst = itv_sub(b, itv_abs(c)) // b-|c|
       val arg = itv_div(b, itv_abs(c)) //b/|c|
-      itv_mul(fst, itv_trunc(arg))
+      itv_mul(fst, itv_trunc(arg))*/
+    
+      /* due errori:
+       * 1. intern vale 0 - 2 anzichè 0 - 3 (anche se 0 - 2 è più giusto)
+       * 2. a vale 1 - 4 e non -1 - 4       (come invece dovrebbe fare... E fa se si usa b-|c|*trunc(b/|c|) secca)
+       * 
+       * idea:
+       * usare b-|c|*trunc(b/|c|)
+       * fixare intern...
+       */
 
-      /*
+      
       val intern_eval_itv = itv_abs(c)
       var intern_eval_itv_sup = intern_eval_itv.sup
       var intern_eval_itv_inf = intern_eval_itv.inf
@@ -690,7 +701,7 @@ bool ITVFUN(itv_sqrt)(itv_internal_t* intern, itv_t a, itv_t b)
       else {
         var intern_eval_itv2 = itv_div(b, intern_eval_itv)
         intern_eval_itv2 = itv_trunc(intern_eval_itv2)
-        intern_eval_itv2 = itv_mul(intern_eval_itv2, intern_eval_itv2)
+        intern_eval_itv2 = itv_mul(intern_eval_itv2, intern_eval_itv)
         if (is_int)
           intern_eval_itv_sup = bound_sub_uint(intern_eval_itv_sup, 1);
         if (bound_sgn(b.sup) < 0) {
@@ -705,8 +716,11 @@ bool ITVFUN(itv_sqrt)(itv_internal_t* intern, itv_t a, itv_t b)
           /* [0,max|c|] */
           intern_eval_itv_inf = bound_set_int(0);
         val a = itv_sub(b, intern_eval_itv2)
-        itv_meet(a, new itv_t(inf = intern_eval_itv_inf, sup = intern_eval_itv_sup))._2
-      }*/
+        //println("PRE MEET: " + a)
+        val intern = new itv_t(inf = intern_eval_itv_inf, sup = intern_eval_itv_sup)
+        //println(intern)
+        itv_meet(a, intern)._2
+      }
     }
 
   /* ====================================================================== */

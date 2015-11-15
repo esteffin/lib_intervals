@@ -15,6 +15,7 @@ object bound {
     //val num : Int /* always allocated, even if inf=1 */
     //val inf : Boolean;  /* 1 => +/-oo; the sign of num decides the sign of the oo 0 => >-oo, <+oo */
     def bound_numref = num
+    override def clone() = new bound_t(num = this.num, inf = this.inf)
   }
 
   object bound_t {
