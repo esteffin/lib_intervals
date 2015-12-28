@@ -29,6 +29,7 @@ object itv {
     def open_right(inf: Int) = new itv_t(inf = bound_t.num(-inf), sup = bound_set_infty(1))
     def open_left(sup: Int) = new itv_t(inf = bound_set_infty(1), sup = bound_t.num(sup))
     def interval(inf: Int, sup: Int) = new itv_t(inf = bound_t.num(-inf), sup = bound_t.num(sup))
+    def point(v: Int) = new itv_t(inf = bound_t.num(-v), sup = bound_t.num(v))
   }
 
   /* ********************************************************************** */
@@ -234,9 +235,7 @@ static inline void itv_swap(itv_t a, itv_t b)
   exc = false;
   num_neg(intern.canonicalize_num,bound_numref(a.inf));
    */
-      if (bound_cmp(a.sup, bound.bound_neg(a.inf)) < 0)
-        true
-      else false
+      (bound_cmp(a.sup, bound.bound_neg(a.inf)) < 0)
     }
 
   def itv_is_bottom(a: itv_t): Boolean =
@@ -267,10 +266,13 @@ static inline int itv_hash(itv_t a)
 }*/
 
   def itv_meet(b: itv_t, c: itv_t): (Boolean, itv_t) = {
-    val sup = bound_min(b.sup, c.sup);
-    val inf = bound_min(b.inf, c.inf);
-    val a = new itv_t(inf = inf, sup = sup)
-    return (itv_canonicalize(a /*,false*/ ), a);
+    if (itv_is_bottom(b) || itv_is_bottom(c)) (true, itv_t.bottom)
+    else {
+      val sup = bound_min(b.sup, c.sup)
+      val inf = bound_min(b.inf, c.inf)
+      val a = new itv_t(inf = inf, sup = sup)
+      (itv_canonicalize(a /*,false*/ ), a)
+    }
   }
   def itv_join(b: itv_t, c: itv_t): itv_t =
     {
@@ -293,7 +295,8 @@ static inline int itv_hash(itv_t a)
       sup = bound_widening(b.sup, c.sup))
   }
   def itv_add(b: itv_t, c: itv_t): itv_t = {
-    new itv_t(sup = bound_add(b.sup, c.sup),
+    if (itv_is_bottom(b) || itv_is_bottom(c)) itv_t.bottom
+    else new itv_t(sup = bound_add(b.sup, c.sup),
       inf = bound_add(b.inf, c.inf))
   }
   /*
@@ -346,7 +349,10 @@ static inline void itv_mul_2exp(itv_t a, itv_t b, int c)
 */
 
   def itv_trunc(b: itv_t): itv_t =
-    { new itv_t(sup = bound_trunc(b.sup), inf = bound_trunc(b.inf)) }
+    {
+      if (itv_is_bottom(b)) itv_t.bottom
+      else new itv_t(sup = bound_trunc(b.sup), inf = bound_trunc(b.inf))
+    }
 
   def itv_is_pos(a: itv_t): Boolean =
     { bound_sgn(a.inf) <= 0 }
@@ -362,6 +368,44 @@ static inline void itv_mul_2exp(itv_t a, itv_t b, int c)
 
   def itv_range_abs(b: itv_t): bound_t =
     { bound_add(b.sup, b.inf) }
+
+  def itv_contains(b: itv_t, n: Int): Boolean =
+    bound_geq(bound_neg(b.inf), n) && bound_leq(b.sup, n)
+
+  def itv_eqat(a: itv_t, b: itv_t): Set[Boolean] = {
+    if (itv_is_bottom(a) || itv_is_bottom(b)) Set.empty[Boolean]
+    if (itv_is_point(a) && itv_is_point(b)) Set(itv_is_eq(a, b))
+    else {
+      val (is_bot, v) = itv_meet(a, b)
+      if (is_bot) Set(false)
+      else Set(true, false)
+    }
+  }
+
+  def itv_neqat(a: itv_t, b: itv_t): Set[Boolean] = {
+    itv_eqat(a, b).map { x => !x }
+  }
+
+  def itv_ltat(a: itv_t, b: itv_t): Set[Boolean] = {
+    if (itv_is_bottom(a) || itv_is_bottom(b)) Set.empty[Boolean]
+    if (bound_cmp(a.sup, bound_neg(b.inf)) < 0) Set(true)
+    else if (bound_cmp(bound_neg(a.inf), b.sup) > 0) Set(false)
+    else Set(true, false)
+  }
+
+  def itv_contains(a: itv_t, b: itv_t): Boolean = {
+    bound_cmp(bound_neg(a.inf), bound_neg(b.inf)) <= 0 && bound_cmp(a.sup, b.sup) >= 0
+  }
+
+  def itv_leqat(a: itv_t, b: itv_t): Set[Boolean] = {
+    if (itv_is_bottom(a) || itv_is_bottom(b)) Set.empty[Boolean]
+    if (bound_cmp(a.sup, bound_neg(b.inf)) < 0) Set(true)
+    else if (bound_cmp(bound_neg(a.inf), b.sup) > 0) Set(false)
+    else {
+      if (bound_cmp(a.sup, bound_neg(b.inf)) == 0) Set(true)
+      else Set(true, false)
+    }
+  }
 
   /*
 static inline void itv_range_rel(itv_internal_t* intern, bound_t a, itv_t b)
@@ -618,9 +662,10 @@ void ITVFUN(itv_div_bound)(itv_t a, itv_t b, bound_t c)
 }*/
   def itv_sub(b: itv_t, c: itv_t): itv_t =
     {
+      if (itv_is_bottom(b) || itv_is_bottom(c)) itv_t.bottom
       //TODO: really??
       //if (a!=c){
-      new itv_t(inf = bound_add(b.inf, c.sup), bound_add(b.sup, c.inf))
+      else new itv_t(inf = bound_add(b.inf, c.sup), bound_add(b.sup, c.inf))
       /*} else if (a!=b) { /* a=c */
     bound_swap(c.sup,c.inf);
     itv_add(a,b,c);
@@ -631,8 +676,9 @@ void ITVFUN(itv_div_bound)(itv_t a, itv_t b, bound_t c)
     }
   def itv_neg(b: itv_t): itv_t =
     {
+      if (itv_is_bottom(b)) itv_t.bottom
       //if (a!=b){
-      new itv_t(inf = bound_set(b.sup), sup = bound_set(b.inf))
+      else new itv_t(inf = bound_set(b.sup), sup = bound_set(b.inf))
       /*} else {
     bound_swap(a.inf,a.sup);
   }*/
@@ -665,7 +711,8 @@ bool ITVFUN(itv_sqrt)(itv_internal_t* intern, itv_t a, itv_t b)
 
   def itv_abs(b: itv_t): itv_t =
     {
-      if (bound_sgn(b.inf) <= 0)
+      if (itv_is_bottom(b)) itv_t.bottom
+      else if (bound_sgn(b.inf) <= 0)
         /* positive interval */
         itv_set(b);
       else if (bound_sgn(b.sup) <= 0)
@@ -679,6 +726,7 @@ bool ITVFUN(itv_sqrt)(itv_internal_t* intern, itv_t a, itv_t b)
   /* x mod y = x - y*trunc(x/y) */
   def itv_mod(b: itv_t, c: itv_t, is_int: Boolean = true): itv_t =
     {
+      if (itv_is_bottom(b) || itv_is_bottom(c)) itv_t.bottom
       /* b-|c|*trunc(b/|c|) */
       /*val fst = itv_sub(b, itv_abs(c)) // b-|c|
       val arg = itv_div(b, itv_abs(c)) //b/|c|
@@ -692,33 +740,34 @@ bool ITVFUN(itv_sqrt)(itv_internal_t* intern, itv_t a, itv_t b)
        * usare b-|c|*trunc(b/|c|)
        * fixare intern...
        */
-
-      val intern_eval_itv = itv_abs(c)
-      var intern_eval_itv_sup = intern_eval_itv.sup
-      var intern_eval_itv_inf = intern_eval_itv.inf
-      if (bound_sgn(intern_eval_itv.inf) == 0) itv_set_top
       else {
-        var intern_eval_itv2 = itv_div(b, intern_eval_itv)
-        intern_eval_itv2 = itv_trunc(intern_eval_itv2)
-        intern_eval_itv2 = itv_mul(intern_eval_itv2, intern_eval_itv)
-        if (is_int)
-          intern_eval_itv_sup = bound_sub_uint(intern_eval_itv_sup, 1);
-        if (bound_sgn(b.sup) < 0) {
-          /* [-max|c|,0] */
-          intern_eval_itv_inf = bound_set(intern_eval_itv_sup);
-          intern_eval_itv_sup = bound_set_int(0);
+        val intern_eval_itv = itv_abs(c)
+        var intern_eval_itv_sup = intern_eval_itv.sup
+        var intern_eval_itv_inf = intern_eval_itv.inf
+        if (bound_sgn(intern_eval_itv.inf) == 0) itv_set_top
+        else {
+          var intern_eval_itv2 = itv_div(b, intern_eval_itv)
+          intern_eval_itv2 = itv_trunc(intern_eval_itv2)
+          intern_eval_itv2 = itv_mul(intern_eval_itv2, intern_eval_itv)
+          if (is_int)
+            intern_eval_itv_sup = bound_sub_uint(intern_eval_itv_sup, 1);
+          if (bound_sgn(b.sup) < 0) {
+            /* [-max|c|,0] */
+            intern_eval_itv_inf = bound_set(intern_eval_itv_sup);
+            intern_eval_itv_sup = bound_set_int(0);
+          }
+          else if (bound_sgn(b.inf) > 0)
+            /* [-max|c|,max|c|] */
+            intern_eval_itv_inf = bound_set(intern_eval_itv_sup);
+          else
+            /* [0,max|c|] */
+            intern_eval_itv_inf = bound_set_int(0);
+          val a = itv_sub(b, intern_eval_itv2)
+          //println("PRE MEET: " + a)
+          val intern = new itv_t(inf = intern_eval_itv_inf, sup = intern_eval_itv_sup)
+          //println(intern)
+          itv_meet(a, intern)._2
         }
-        else if (bound_sgn(b.inf) > 0)
-          /* [-max|c|,max|c|] */
-          intern_eval_itv_inf = bound_set(intern_eval_itv_sup);
-        else
-          /* [0,max|c|] */
-          intern_eval_itv_inf = bound_set_int(0);
-        val a = itv_sub(b, intern_eval_itv2)
-        //println("PRE MEET: " + a)
-        val intern = new itv_t(inf = intern_eval_itv_inf, sup = intern_eval_itv_sup)
-        //println(intern)
-        itv_meet(a, intern)._2
       }
     }
 
@@ -791,14 +840,14 @@ bool ITVFUN(itv_sqrt)(itv_internal_t* intern, itv_t a, itv_t b)
         /* 0 is in the middle of b: one multiplies b by c.inf */
         val a_sup = bound_mul(b.sup, c.inf)
         val a_inf = bound_mul(b.inf, c.inf)
-        //FIXME: bound_swap(a.inf,a.sup)
         new itv_t(inf = a_sup, sup = a_inf)
       }
     }
 
   def itv_mul(b: itv_t, c: itv_t): itv_t =
     {
-      if (bound_sgn(c.inf) <= 0) {
+      if (itv_is_bottom(b) || itv_is_bottom(c)) itv_t.bottom
+      else if (bound_sgn(c.inf) <= 0) {
         //println("mulp b c")
         /* c is positive, */
         itv_mulp(b, c)
@@ -920,7 +969,9 @@ bool ITVFUN(itv_sqrt)(itv_internal_t* intern, itv_t a, itv_t b)
   }
 
   def itv_div(b: itv_t, c: itv_t): itv_t = {
-    if (bound_sgn(c.inf) < 0) {
+    if (itv_is_bottom(b) || itv_is_bottom(c)) itv_t.bottom
+    else if (itv_is_zero(c) && !itv_contains(b, 0)) itv_t.bottom
+    else if (bound_sgn(c.inf) < 0) {
       /* c is positive */
       itv_divp(b, c)
     }

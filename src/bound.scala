@@ -135,6 +135,34 @@ static inline void bound_clear_array(bound_t* a, size_t size)
     else if (bound_infty(c)) bound_set_infty(bound_sgn(c))
     else new bound_t(b.num + c.num, false)
   }
+
+  def bound_lt(b: bound_t, c: Int): Boolean = {
+    if (b.inf)
+      bound_sgn(b) > 0
+    else
+      c < b.num
+  }
+
+  def bound_leq(b: bound_t, c: Int): Boolean = {
+    if (b.inf)
+      bound_sgn(b) > 0
+    else
+      c <= b.num
+  }
+
+  def bound_gt(b: bound_t, c: Int): Boolean = {
+    if (b.inf)
+      bound_sgn(b) < 0
+    else
+      c > b.num
+  }
+
+  def bound_geq(b: bound_t, c: Int): Boolean = {
+    if (b.inf)
+      bound_sgn(b) < 0
+    else
+      c >= b.num
+  }
   /*static inline void bound_add_uint(bound_t a, bound_t b, unsigned long int c)
 {
   if (bound_infty(b)) bound_set_infty(a,bound_sgn(b));

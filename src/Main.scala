@@ -125,8 +125,12 @@ object Main {
       c = itv_t.open_left(sup = -11) //bound_set_int(c->inf,7); bound_set_int(c->sup,11);
       arith(b, c);
 
-      b = itv_t.open_right(inf = 5) //bound_set_int(b->inf,3); bound_set_int(b->sup,5);
+      b = itv_t.point(0) //bound_set_int(b->inf,3); bound_set_int(b->sup,5);
       c = itv_t.bottom //bound_set_int(c->inf,7); bound_set_int(c->sup,11);
+      arith(b, c);
+
+      b = itv_t.point(0) //bound_set_int(b->inf,3); bound_set_int(b->sup,5);
+      c = itv_t.point(0) //bound_set_int(c->inf,7); bound_set_int(c->sup,11);
       arith(b, c);
 
     }
@@ -134,8 +138,8 @@ object Main {
 
     //itv.itv_print(itv_set_top)
 
-    val a = itv_t.interval(2, 4)
-    val b = itv_t.interval(3, 3)
+    val a = itv_t.interval(1, 5)
+    val b = itv_t.interval(4, 9)
 
     // a - (floor(a / b) * b)
     /*
@@ -157,7 +161,8 @@ object Main {
     println("trunc(b/|c|): " + itv_trunc(arg))
     println("mod(b,c): " + itv_mul(fst, itv_trunc(arg)))*/
 
-    itv_main()
+    //itv_main()
+    println(itv_leqat(a, b))
 
     //println("or" + itv_mod(a, b))
 
