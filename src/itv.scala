@@ -407,6 +407,14 @@ static inline void itv_mul_2exp(itv_t a, itv_t b, int c)
     }
   }
 
+  def itv_gtat(a: itv_t, b: itv_t): Set[Boolean] = {
+    itv_leqat(a, b).map { x => !x }
+  }
+
+  def itv_geqat(a: itv_t, b: itv_t): Set[Boolean] = {
+    itv_ltat(a, b).map { x => !x }
+  }
+
   /*
 static inline void itv_range_rel(itv_internal_t* intern, bound_t a, itv_t b)
 {

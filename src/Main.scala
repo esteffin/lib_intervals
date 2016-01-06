@@ -138,8 +138,8 @@ object Main {
 
     //itv.itv_print(itv_set_top)
 
-    val a = itv_t.interval(1, 5)
-    val b = itv_t.interval(4, 9)
+    val a = itv_t.interval(3, 6)
+    val b = itv_t.interval(5, 9)
 
     // a - (floor(a / b) * b)
     /*
