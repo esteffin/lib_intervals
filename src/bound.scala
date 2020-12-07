@@ -1,4 +1,11 @@
-
+/*
+ * This code is derived from the numerical abstract domain library APRON.
+ * Here is the APRON library copyright notice (LGPL). 
+ * The Apron Numerical Abstract Domain Library 
+ * (https://github.com/antoinemine/apron and 
+ *  https://antoinemine.github.io/Apron/doc/).
+ * The original licence of APRON is included in "<project-root>/APRON_LICENCE".
+ */
 
 /**
  * @author esteffin
